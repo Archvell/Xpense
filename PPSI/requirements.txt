@@ -92,11 +92,10 @@ pycparser
 Pygments
 pyparsing
 PySocks
-pystan==2.19.1.1
+pystan==3.7.0
 python-dateutil
 python-json-logger
 pytz
-pywin32==308
 pywinpty
 PyYAML
 pyzmq
