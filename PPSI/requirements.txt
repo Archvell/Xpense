@@ -93,7 +93,6 @@ pycparser
 Pygments
 pyparsing
 PySocks
-pystan==3.7.0
 python-dateutil
 python-json-logger
 pytz
