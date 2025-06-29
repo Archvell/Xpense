@@ -1,3 +1,10 @@
+streamlit
+numpy
+Cython
+cmdstanpy
+pandas
+matplotlib
+plotly
 altair
 anyio
 argon2-cffi
@@ -17,12 +24,10 @@ certifi
 cffi
 charset-normalizer
 click
-cmdstanpy
 colorama
 comm
 contourpy
 cycler
-Cython
 debugpy
 decorator
 defusedxml
@@ -59,7 +64,6 @@ jupyterlab-pygments
 jupyterlab-server
 kiwisolver
 MarkupSafe
-matplotlib==3.9.4
 matplotlib-inline
 mistune
 munkres==1.1.4
@@ -70,17 +74,14 @@ nbformat
 nest-asyncio
 notebook
 notebook-shim
-numpy
 olefile
 overrides
 packaging
-pandas
 pandocfilters
 parso
 pickleshare
 Pillow
 platformdirs
-plotly
 prometheus-client
 prompt-toolkit
 prophet
@@ -112,7 +113,6 @@ sniffio
 soupsieve
 stack-data
 stanio
-streamlit
 tenacity
 terminado
 tinycss2
