@@ -12,17 +12,15 @@ import hashlib
 from st_supabase_connection import SupabaseConnection
 from supabase import create_client
 
-# Initialize connection.
-conn = st.connection("supabase",type=SupabaseConnection)
-supabase = conn.client
-
 st.set_page_config(
     page_title="Xpense",
     layout="wide",
     page_icon="Xpense V5.png"
 )
 
-
+def get_supabase():
+    conn = st.connection("supabase", type=SupabaseConnection)
+    return conn.client
 
 # # Perform query.
 # rows = conn.query("*", table="mytable", ttl="10m").execute()
@@ -93,9 +91,11 @@ def hash_password(password):
 
 def register_user(username, password, role):
     try:
+        supabase = get_supabase()  # ambil koneksi fresh
         existing = supabase.table("users").select("username").eq("username", username).execute()
+
         if existing.data:
-            return False  # username sudah ada
+            return False  # Username sudah digunakan
 
         password_hash = hash_password(password)
         result = supabase.table("users").insert({
@@ -109,12 +109,17 @@ def register_user(username, password, role):
         return False
 
 def login_user(username, password):
-    password_hash = hash_password(password)
-    response = supabase.table("users").select("password_hash, role").eq("username", username).execute()
+    try:
+        supabase = get_supabase()
+        password_hash = hash_password(password)
+        response = supabase.table("users").select("password_hash, role").eq("username", username).execute()
 
-    if response.data and response.data[0]["password_hash"] == password_hash:
-        return True, response.data[0]["role"]
-    return False, None
+        if response.data and response.data[0]["password_hash"] == password_hash:
+            return True, response.data[0]["role"]
+        return False, None
+    except Exception as e:
+        st.error(f"❌ Error saat login: {e}")
+        return False, None
 
 
 
