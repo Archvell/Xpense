@@ -11,6 +11,7 @@ from prophet import Prophet
 import streamlit.components.v1 as components
 import hashlib
 from st_supabase_connection import SupabaseConnection
+from supabase import create_client
 
 st.set_page_config(
     page_title="Xpense",
@@ -27,6 +28,7 @@ conn = st.connection("supabase",type=SupabaseConnection)
 # [connections.supabase]
 SUPABASE_URL = "https://nbuqypcaowxnpbguhper.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5idXF5cGNhb3d4bnBiZ3VocGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0MzA2NjQsImV4cCI6MjA2NzAwNjY2NH0.HHoTXMtKt-_rzWe420hH21V6MspUD-a2czDqvMFBvy4"
+supabase = create_client(url, key)
 
 def angka_input_with_format(label, key="formatted_input"):
     st.markdown(f"<label>{label}</label>", unsafe_allow_html=True)
@@ -87,26 +89,28 @@ def angka_input_with_format(label, key="formatted_input"):
 
 def register_user(username, password, role):
     try:
-        # Hash password
-        password_bytes = password.encode('utf-8')  # harus bytes
-        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')  # hasil: string
+        # Pastikan password adalah string, lalu encode ke bytes
+        if not isinstance(password, str):
+            raise ValueError("Password harus berupa string")
+        
+        password_bytes = password.encode('utf-8')  # ✅ ini benar
+        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt())  # ✅ input adalah bytes
+        hashed_pw_str = hashed_pw.decode('utf-8')  # ubah hasilnya jadi string untuk disimpan
 
-        # Insert ke Supabase
-        data = {
+        # Insert ke tabel Supabase
+        result = supabase.table("users").insert({
             "username": username,
-            "password_hash": hashed_pw,
+            "password_hash": hashed_pw_str,
             "role": role
-        }
-
-        result = supabase.table("users").insert(data).execute()
+        }).execute()
 
         if result.status_code == 201:
             return True
         else:
-            st.error(f"❌ Supabase error: {result.data}")
+            print("❌ Gagal insert ke Supabase:", result.data)
             return False
     except Exception as e:
-        st.error(f"❌ Error saat registrasi: {e}")
+        print(f"❌ Error saat registrasi:", e)
         return False
 
 
