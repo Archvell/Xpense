@@ -84,9 +84,8 @@ def register_user(username, password, role):
     if not password or not isinstance(password, str):
         raise ValueError("Password tidak valid")
 
-    password_bytes = password.encode('utf-8')
-    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
-    password_hash = hashed.decode('utf-8')  # decode untuk disimpan di DB
+    password_bytes = password.encode('utf-8')  # encode ke bytes
+    password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())  # hasil = bytes
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -103,15 +102,24 @@ def register_user(username, password, role):
     finally:
         conn.close()
 
+
 def login_user(username, password):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT password_hash, role FROM users WHERE username = ?", (username,))
-    row = cursor.fetchone()
-    conn.close()
-    if row and bcrypt.checkpw(password.encode(), row[0]):
-        return True, row[1]
-    return False, None
+    try:
+        cursor.execute(
+            "SELECT password_hash, role FROM users WHERE username = %s",
+            (username,)
+        )
+        row = cursor.fetchone()
+        if row:
+            stored_hash = row[0]  # ini adalah bytes dari BYTEA
+            if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
+                return True, row[1]  # Berhasil login, return True + role
+        return False, None
+    finally:
+        conn.close()
+
 
 
 def get_user_settings(username):
