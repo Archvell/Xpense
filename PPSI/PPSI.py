@@ -89,32 +89,29 @@ def angka_input_with_format(label, key="formatted_input"):
 
 def register_user(username, password, role):
     try:
-        # Pastikan password adalah string, lalu encode ke bytes
-        if not isinstance(password, str):
-            raise ValueError("Password harus berupa string")
-        
-        password_bytes = password.encode('utf-8')  # ✅ ini benar
-        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt())  # ✅ input adalah bytes
-        hashed_pw_str = hashed_pw.decode('utf-8')  # ubah hasilnya jadi string untuk disimpan
+        password_bytes = password.encode('utf-8')
+        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')
 
-        # Insert ke tabel Supabase
+        # Kirim ke Supabase
         result = supabase.table("users").insert({
             "username": username,
-            "password_hash": hashed_pw_str,
+            "password_hash": hashed_pw,
             "role": role
         }).execute()
 
-        print("📦 Supabase response:", result)
+        # 🔍 DEBUG: tampilkan hasil Supabase response langsung di halaman
+        st.write("📦 Response Supabase:", result)
 
-        if result.status_code == 201:
+        if result.status_code == 201 or (result.data and len(result.data) > 0):
             return True
         else:
-            st.error(f"❌ Gagal insert: {result.data}")  # tampilkan ke layar
+            st.error(f"❌ Insert gagal: {result.status_code} - {result.data}")
             return False
 
     except Exception as e:
-        print(f"❌ Error saat registrasi:", e)
+        st.error(f"❌ Error saat registrasi: {e}")
         return False
+
 
 
 
