@@ -81,46 +81,40 @@ def angka_input_with_format(label, key="formatted_input"):
 #     conn.close()
 
 def register_user(username, password, role):
-    if not password or not isinstance(password, str):
-        raise ValueError("Password tidak valid")
-
     try:
-        password_bytes = password.encode("utf-8")  # pastikan password -> bytes
-        password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())  # hasil bytes
+        password_bytes = password.encode('utf-8')
+        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        data = {
+            "username": username,
+            "password_hash": hashed_pw.decode('utf-8'),
+            "role": role
+        }
 
-        cursor.execute(
-            "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)",
-            (username, psycopg2.Binary(password_hash), role)  # psycopg2.Binary untuk BYTEA
-        )
-        conn.commit()
-        return True
+        result = supabase.table("users").insert(data).execute()
+
+        if result.status_code == 201:
+            return True
+        else:
+            print("❌ Insert failed:", result)
+            return False
     except Exception as e:
         print("❌ Gagal register:", e)
         return False
-    finally:
-        conn.close()
+
 
 def login_user(username, password):
-    conn = get_connection()
-    cursor = conn.cursor()
     try:
-        cursor.execute(
-            "SELECT password_hash, role FROM users WHERE username = %s",
-            (username,)
-        )
-        row = cursor.fetchone()
-        if row:
-            stored_hash = row[0]  # langsung bytes dari kolom BYTEA
-            if bcrypt.checkpw(password.encode("utf-8"), stored_hash):
-                return True, row[1]
+        result = supabase.table("users").select("password_hash, role").eq("username", username).execute()
+        if result.data:
+            user_data = result.data[0]
+            stored_hash = user_data["password_hash"]
+            if bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
+                return True, user_data["role"]
         return False, None
-    finally:
-        conn.close()
-
-
+    except Exception as e:
+        print("❌ Login error:", e)
+        return False, None
 
 
 def get_user_settings(username):
