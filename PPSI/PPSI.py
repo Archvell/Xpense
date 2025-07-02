@@ -11,14 +11,11 @@ import streamlit.components.v1 as components
 import hashlib
 from st_supabase_connection import SupabaseConnection
 from supabase import create_client
+import bcrypt
 
 # Initialize connection.
 conn = st.connection("supabase",type=SupabaseConnection)
-
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = conn.client
 
 st.set_page_config(
     page_title="Xpense",
