@@ -81,12 +81,17 @@ def angka_input_with_format(label, key="formatted_input"):
 #     conn.close()
 
 def register_user(username, password, role):
-    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')  # decode to string
+    password_bytes = password.encode('utf-8')  # ubah ke bytes
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt())  # hasil: bytes
+    password_hash = hashed.decode('utf-8')  # ubah hasilnya ke string agar bisa disimpan ke database
+
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)", 
-                       (username, password_hash, role))
+        cursor.execute(
+            "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+            (username, password_hash, role)
+        )
         conn.commit()
         return True
     except Exception as e:
@@ -101,8 +106,13 @@ def login_user(username, password):
     cursor.execute("SELECT password_hash, role FROM users WHERE username = ?", (username,))
     row = cursor.fetchone()
     conn.close()
-    if row and bcrypt.checkpw(password.encode(), row[0]):
-        return True, row[1]
+
+    if row:
+        hashed_pw_str = row[0]  # string dari database
+        hashed_pw_bytes = hashed_pw_str.encode('utf-8')  # ubah ke bytes
+
+        if bcrypt.checkpw(password.encode('utf-8'), hashed_pw_bytes):
+            return True, row[1]
     return False, None
 
 def get_user_settings(username):
