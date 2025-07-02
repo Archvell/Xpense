@@ -26,8 +26,8 @@ conn = st.connection("supabase",type=SupabaseConnection)
 # rows = conn.query("*", table="mytable", ttl="10m").execute()
 
 # [connections.supabase]
-SUPABASE_URL = "https://nbuqypcaowxnpbguhper.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5idXF5cGNhb3d4bnBiZ3VocGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0MzA2NjQsImV4cCI6MjA2NzAwNjY2NH0.HHoTXMtKt-_rzWe420hH21V6MspUD-a2czDqvMFBvy4"
+url = "https://nbuqypcaowxnpbguhper.supabase.co"
+key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5idXF5cGNhb3d4bnBiZ3VocGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0MzA2NjQsImV4cCI6MjA2NzAwNjY2NH0.HHoTXMtKt-_rzWe420hH21V6MspUD-a2czDqvMFBvy4"
 supabase = create_client(url, key)
 
 def angka_input_with_format(label, key="formatted_input"):
