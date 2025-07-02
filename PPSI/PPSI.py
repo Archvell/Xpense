@@ -21,8 +21,8 @@ st.set_page_config(
 # Initialize connection.
 conn = st.connection("supabase",type=SupabaseConnection)
 
-# Perform query.
-rows = conn.query("*", table="mytable", ttl="10m").execute()
+# # Perform query.
+# rows = conn.query("*", table="mytable", ttl="10m").execute()
 
 def angka_input_with_format(label, key="formatted_input"):
     st.markdown(f"<label>{label}</label>", unsafe_allow_html=True)
