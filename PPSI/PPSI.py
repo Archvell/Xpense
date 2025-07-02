@@ -81,27 +81,16 @@ def angka_input_with_format(label, key="formatted_input"):
 #     conn.close()
 
 def register_user(username, password, role):
+    sup = supabase
     try:
-        password_bytes = password.encode('utf-8')
-        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')
-
-        data = {
-            "username": username,
-            "password_hash": hashed_pw,
-            "role": role
-        }
-
-        result = supabase.table("users").insert(data).execute()
-
-        print("🔍 INSERT RESULT:", result)
-
-        if result.status_code == 201:
-            return True
-        else:
-            print("❌ Gagal insert. Pesan:", result.data)
-            return False
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode()
+        data = {"username": username, "password_hash": hashed, "role": role}
+        result = sup.table("users").insert(data).execute()
+        st.write("🔍 INSERT STATUS:", result.status_code)
+        st.write("📦 INSERT RESPONSE:", result.data)
+        return result.status_code == 201
     except Exception as e:
-        print("❌ Exception saat register:", e)
+        st.write("❌ EXCEPTION:", e)
         return False
 
 
