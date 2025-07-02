@@ -10,7 +10,7 @@ from datetime import datetime
 from prophet import Prophet
 import streamlit.components.v1 as components
 import hashlib
-
+from st_supabase_connection import SupabaseConnection
 
 st.set_page_config(
     page_title="Xpense",
@@ -18,6 +18,11 @@ st.set_page_config(
     page_icon="Xpense V5.png"
 )
 
+# Initialize connection.
+conn = st.connection("supabase",type=SupabaseConnection)
+
+# Perform query.
+rows = conn.query("*", table="mytable", ttl="10m").execute()
 
 def angka_input_with_format(label, key="formatted_input"):
     st.markdown(f"<label>{label}</label>", unsafe_allow_html=True)
@@ -34,46 +39,46 @@ def angka_input_with_format(label, key="formatted_input"):
     value = components.html(html_code, height=60)
     return value
 
-DB_NAME = "users.db"
+# DB_NAME = "users.db"
 
-def get_connection():
-    return sqlite3.connect(DB_NAME)
+# def get_connection():
+#     return sqlite3.connect(DB_NAME)
 
-def initialize_db():
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        username TEXT PRIMARY KEY,
-        password_hash TEXT NOT NULL,
-        role TEXT DEFAULT 'user',
-        profile_pic BLOB,
-        emergency_rate INTEGER DEFAULT 10,
-        nama_akun TEXT
-    )
-    """)
+# def initialize_db():
+#     conn = get_connection()
+#     cursor = conn.cursor()
+#     cursor.execute("""
+#     CREATE TABLE IF NOT EXISTS users (
+#         username TEXT PRIMARY KEY,
+#         password_hash TEXT NOT NULL,
+#         role TEXT DEFAULT 'user',
+#         profile_pic BLOB,
+#         emergency_rate INTEGER DEFAULT 10,
+#         nama_akun TEXT
+#     )
+#     """)
 
-    try:
-        cursor.execute("ALTER TABLE users ADD COLUMN nama_akun TEXT")
-    except sqlite3.OperationalError:
-        # Jika kolom sudah ada, abaikan error
-        pass
+#     try:
+#         cursor.execute("ALTER TABLE users ADD COLUMN nama_akun TEXT")
+#     except sqlite3.OperationalError:
+#         # Jika kolom sudah ada, abaikan error
+#         pass
         
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS laporan_keuangan (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        tanggal TEXT,
-        kategori TEXT,
-        jenis TEXT,
-        jumlah INTEGER,
-        dana_darurat INTEGER,
-        keterangan TEXT,
-        bukti_img BLOB
-    )
-    """)
-    conn.commit()
-    conn.close()
+#     cursor.execute("""
+#     CREATE TABLE IF NOT EXISTS laporan_keuangan (
+#         id INTEGER PRIMARY KEY AUTOINCREMENT,
+#         username TEXT,
+#         tanggal TEXT,
+#         kategori TEXT,
+#         jenis TEXT,
+#         jumlah INTEGER,
+#         dana_darurat INTEGER,
+#         keterangan TEXT,
+#         bukti_img BLOB
+#     )
+#     """)
+#     conn.commit()
+#     conn.close()
 
 def register_user(username, password, role):
     password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
@@ -832,32 +837,42 @@ def akun_page():
         st.success("✅ Nama akun berhasil disimpan.")
         st.rerun()
 
+   
+
     # GANTI USERNAME & PASSWORD
     st.subheader("🔑 Ganti Username & Password")
 
+    # GANTI USERNAME DENGAN VALIDASI USERNAME LAMA
     with st.expander("Ganti Username"):
-        new_username = st.text_input("Username baru")
+        old_username_input = st.text_input("Masukkan Username Saat Ini")
+        new_username = st.text_input("Username Baru")
         if st.button("Simpan Username"):
-            if new_username:
-                conn = get_connection()
-                cursor = conn.cursor()
-                try:
-                    cursor.execute("UPDATE users SET username = ? WHERE username = ?", (new_username, username))
-                    cursor.execute("UPDATE laporan_keuangan SET username = ? WHERE username = ?", (new_username, username))
-                    # Assuming there might be a 'tabungan' table as per original code context, though not defined
-                    # cursor.execute("UPDATE tabungan SET username = ? WHERE username = ?", (new_username, username)) 
-                    conn.commit()
-                    st.session_state["username"] = new_username
-                    st.success("✅ Username berhasil diperbarui.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Gagal memperbarui username: {e}")
-                finally:
-                    conn.close()
+            if old_username_input and new_username:
+                if old_username_input == username:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    try:
+                        cursor.execute("UPDATE users SET username = ? WHERE username = ?", (new_username, username))
+                        cursor.execute("UPDATE laporan_keuangan SET username = ? WHERE username = ?", (new_username, username))
+                        # Jika ada tabel tabungan:
+                        # cursor.execute("UPDATE tabungan SET username = ? WHERE username = ?", (new_username, username))
+                        conn.commit()
+                        st.session_state["username"] = new_username
+                        st.success("✅ Username berhasil diperbarui.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Gagal memperbarui username: {e}")
+                    finally:
+                        conn.close()
+                else:
+                    st.warning("❌ Username saat ini salah.")
+            else:
+                st.warning("Mohon isi semua kolom.")
 
+    # GANTI PASSWORD
     with st.expander("Ganti Password"):
-        current_pw = st.text_input("Password saat ini", type="password")
-        new_pw = st.text_input("Password baru", type="password")
+        current_pw = st.text_input("Password Saat Ini", type="password")
+        new_pw = st.text_input("Password Baru", type="password")
         if st.button("Simpan Password"):
             if not current_pw or not new_pw:
                 st.warning("Mohon isi semua kolom.")
@@ -875,24 +890,45 @@ def akun_page():
                     st.error("Password saat ini salah.")
                 conn.close()
 
-    # HAPUS AKUN
+    # HAPUS AKUN DENGAN KONFIRMASI
     st.subheader("⚠ Hapus Akun")
-    if st.button("🗑 Hapus Akun Saya", help="Tindakan ini tidak bisa dibatalkan"):
-        conn = get_connection()
-        cursor = conn.cursor()
-        try:
-            cursor.execute("DELETE FROM users WHERE username = ?", (username,))
-            cursor.execute("DELETE FROM laporan_keuangan WHERE username = ?", (username,))
-            # Assuming there might be a 'tabungan' table as per original code context, though not defined
-            # cursor.execute("DELETE FROM tabungan SET username = ? WHERE username = ?", (username,))
-            conn.commit()
-            conn.close()
-            st.session_state.clear()
-            st.success("Akun dan semua data terkait berhasil dihapus.")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Terjadi kesalahan saat menghapus akun: {e}")
+    with st.expander("Hapus Akun Saya"):
+        confirm_username = st.text_input("Masukkan Username Anda")
+        confirm_password = st.text_input("Masukkan Password Anda", type="password")
 
+        if st.button("Lanjutkan Hapus Akun"):
+            if not confirm_username or not confirm_password:
+                st.warning("Mohon isi username dan password.")
+            elif confirm_username != username:
+                st.error("❌ Username tidak sesuai dengan akun yang sedang aktif.")
+            else:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+                db_pw = cursor.fetchone()
+                if db_pw and bcrypt.checkpw(confirm_password.encode(), db_pw[0]):
+                    # Konfirmasi terakhir
+                    st.warning("⚠ Apakah kamu yakin ingin menghapus akun ini? Semua data dan akun akan hilang.")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button("✅ Ya, Hapus Akun"):
+                            try:
+                                cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+                                cursor.execute("DELETE FROM laporan_keuangan WHERE username = ?", (username,))
+                                # Jika ada tabel tabungan:
+                                # cursor.execute("DELETE FROM tabungan WHERE username = ?", (username,))
+                                conn.commit()
+                                conn.close()
+                                st.session_state.clear()
+                                st.success("Akun dan semua data terkait berhasil dihapus.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Terjadi kesalahan saat menghapus akun: {e}")
+                    with col2:
+                        if st.button("❌ Tidak, Batalkan"):
+                            st.info("Penghapusan akun dibatalkan.")
+                else:
+                    st.error("❌ Password salah.")
 
 
 
@@ -965,7 +1001,7 @@ def login_register_page():
     st.markdown('<div class="card-login">', unsafe_allow_html=True)
     st.markdown('<div class="app-title">Xpense</div>', unsafe_allow_html=True)
 
-    tab1, tab2 = st.tabs(["🔐 Masuk", "📝 Daftar Akun"])
+    tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"])
 
     with tab1:
         st.write("### Selamat Datang Kembali 👋")
