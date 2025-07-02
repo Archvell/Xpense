@@ -1057,7 +1057,7 @@ def login_register_page():
             else:
                 role = "user"  
                 success = register_user(new_username, new_password, role)
-                 if success:
+                if success:
                     st.success("🎉 Registrasi berhasil! Silakan login.")
                 else:
                     st.error("Registrasi gagal. Silakan coba lagi.")
