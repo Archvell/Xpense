@@ -10,7 +10,15 @@ from prophet import Prophet
 import streamlit.components.v1 as components
 import hashlib
 from st_supabase_connection import SupabaseConnection
+from supabase import create_client
 
+# Initialize connection.
+conn = st.connection("supabase",type=SupabaseConnection)
+
+SUPABASE_URL = st.secrets["https://nbuqypcaowxnpbguhper.supabase.co"]
+SUPABASE_KEY = st.secrets["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5idXF5cGNhb3d4bnBiZ3VocGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0MzA2NjQsImV4cCI6MjA2NzAwNjY2NH0.HHoTXMtKt-_rzWe420hH21V6MspUD-a2czDqvMFBvy4"]
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.set_page_config(
     page_title="Xpense",
@@ -18,8 +26,7 @@ st.set_page_config(
     page_icon="Xpense V5.png"
 )
 
-# Initialize connection.
-conn = st.connection("supabase",type=SupabaseConnection)
+
 
 # # Perform query.
 # rows = conn.query("*", table="mytable", ttl="10m").execute()
@@ -84,25 +91,26 @@ def angka_input_with_format(label, key="formatted_input"):
 #     conn.close()
 
 
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def register_user(username, password, role):
-    password_hash = hash_password(password)
+    try:
+        existing = supabase.table("users").select("username").eq("username", username).execute()
+        if existing.data:
+            return False  # username sudah ada
 
-    # Cek apakah username sudah ada
-    existing = supabase.table("users").select("username").eq("username", username).execute()
-    if existing.data:
-        return False  # Username sudah digunakan
-
-    # Insert user baru
-    result = supabase.table("users").insert({
-        "username": username,
-        "password_hash": password_hash,
-        "role": role
-    }).execute()
-
-    return result.status_code == 201
+        password_hash = hash_password(password)
+        result = supabase.table("users").insert({
+            "username": username,
+            "password_hash": password_hash,
+            "role": role
+        }).execute()
+        return result.status_code == 201
+    except Exception as e:
+        st.error(f"❌ Error saat registrasi: {e}")
+        return False
 
 def login_user(username, password):
     password_hash = hash_password(password)
