@@ -81,14 +81,24 @@ def angka_input_with_format(label, key="formatted_input"):
 #     conn.close()
 
 def register_user(username, password, role):
-    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+    if not password or not isinstance(password, str):
+        raise ValueError("Password tidak valid")
+
+    password_bytes = password.encode('utf-8')
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+    password_hash = hashed.decode('utf-8')  # decode untuk disimpan di DB
+
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", (username, password_hash, role))
+        cursor.execute(
+            "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)",
+            (username, password_hash, role)
+        )
         conn.commit()
         return True
-    except sqlite3.IntegrityError:
+    except Exception as e:
+        print("❌ Gagal register:", e)
         return False
     finally:
         conn.close()
