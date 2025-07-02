@@ -83,28 +83,33 @@ def angka_input_with_format(label, key="formatted_input"):
 #     conn.commit()
 #     conn.close()
 
-def register_user(username, password, role):
-    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-    conn = get_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", (username, password_hash, role))
-        conn.commit()
-        return True
-    except sqlite3.IntegrityError:
-        return False
-    finally:
-        conn.close()
 
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def register_user(username, password, role):
+    password_hash = hash_password(password)
+
+    # Cek apakah username sudah ada
+    existing = supabase.table("users").select("username").eq("username", username).execute()
+    if existing.data:
+        return False  # Username sudah digunakan
+
+    # Insert user baru
+    result = supabase.table("users").insert({
+        "username": username,
+        "password_hash": password_hash,
+        "role": role
+    }).execute()
+
+    return result.status_code == 201
 
 def login_user(username, password):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT password_hash, role FROM users WHERE username = ?", (username,))
-    row = cursor.fetchone()
-    conn.close()
-    if row and bcrypt.checkpw(password.encode(), row[0]):
-        return True, row[1]
+    password_hash = hash_password(password)
+    response = supabase.table("users").select("password_hash, role").eq("username", username).execute()
+
+    if response.data and response.data[0]["password_hash"] == password_hash:
+        return True, response.data[0]["role"]
     return False, None
 
 
