@@ -105,9 +105,9 @@ def register_user(username, password, role):
         }).execute()
         return result.status_code == 201
     except Exception as e:
-        
-    st.error(f"❌ Error saat registrasi: {e}")
-    st.stop()  # agar tidak lanjut error misleading "username sudah digunakan"
+
+        st.error(f"❌ Error saat registrasi: {e}")
+        st.stop()  # agar tidak lanjut error misleading "username sudah digunakan"
 
 
 def login_user(username, password):
@@ -121,8 +121,8 @@ def login_user(username, password):
         return False, None
     except Exception as e:
 
-    st.error(f"❌ Error saat registrasi: {e}")
-    st.stop()  # agar tidak lanjut error misleading "username sudah digunakan"
+        st.error(f"❌ Error saat registrasi: {e}")
+        st.stop()  # agar tidak lanjut error misleading "username sudah digunakan"
 
 
 
