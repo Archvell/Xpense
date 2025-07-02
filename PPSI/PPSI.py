@@ -104,11 +104,14 @@ def register_user(username, password, role):
             "role": role
         }).execute()
 
+        print("📦 Supabase response:", result)
+
         if result.status_code == 201:
             return True
         else:
-            print("❌ Gagal insert ke Supabase:", result.data)
+            st.error(f"❌ Gagal insert: {result.data}")  # tampilkan ke layar
             return False
+
     except Exception as e:
         print(f"❌ Error saat registrasi:", e)
         return False
