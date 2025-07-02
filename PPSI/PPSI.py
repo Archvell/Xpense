@@ -84,15 +84,16 @@ def register_user(username, password, role):
     if not password or not isinstance(password, str):
         raise ValueError("Password tidak valid")
 
-    password_bytes = password.encode('utf-8')  # encode ke bytes
-    password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())  # hasil = bytes
-
-    conn = get_connection()
-    cursor = conn.cursor()
     try:
+        password_bytes = password.encode("utf-8")  # pastikan password -> bytes
+        password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())  # hasil bytes
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
         cursor.execute(
             "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)",
-            (username, password_hash, role)
+            (username, psycopg2.Binary(password_hash), role)  # psycopg2.Binary untuk BYTEA
         )
         conn.commit()
         return True
@@ -101,7 +102,6 @@ def register_user(username, password, role):
         return False
     finally:
         conn.close()
-
 
 def login_user(username, password):
     conn = get_connection()
@@ -113,12 +113,13 @@ def login_user(username, password):
         )
         row = cursor.fetchone()
         if row:
-            stored_hash = row[0]  # ini adalah bytes dari BYTEA
-            if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
-                return True, row[1]  # Berhasil login, return True + role
+            stored_hash = row[0]  # langsung bytes dari kolom BYTEA
+            if bcrypt.checkpw(password.encode("utf-8"), stored_hash):
+                return True, row[1]
         return False, None
     finally:
         conn.close()
+
 
 
 
