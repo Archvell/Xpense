@@ -12,12 +12,6 @@ import hashlib
 from st_supabase_connection import SupabaseConnection
 from supabase import create_client
 
-st.set_page_config(
-    page_title="Xpense",
-    layout="wide",
-    page_icon="Xpense V5.png"
-)
-
 # Initialize connection.
 conn = st.connection("supabase",type=SupabaseConnection)
 
@@ -25,6 +19,14 @@ SUPABASE_URL = st.secrets["https://nbuqypcaowxnpbguhper.supabase.co"]
 SUPABASE_KEY = st.secrets["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5idXF5cGNhb3d4bnBiZ3VocGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0MzA2NjQsImV4cCI6MjA2NzAwNjY2NH0.HHoTXMtKt-_rzWe420hH21V6MspUD-a2czDqvMFBvy4"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+st.set_page_config(
+    page_title="Xpense",
+    layout="wide",
+    page_icon="Xpense V5.png"
+)
+
+
 
 # # Perform query.
 # rows = conn.query("*", table="mytable", ttl="10m").execute()
