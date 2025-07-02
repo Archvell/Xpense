@@ -24,6 +24,9 @@ conn = st.connection("supabase",type=SupabaseConnection)
 # # Perform query.
 # rows = conn.query("*", table="mytable", ttl="10m").execute()
 
+[connections.supabase]
+SUPABASE_URL = "https://nbuqypcaowxnpbguhper.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5idXF5cGNhb3d4bnBiZ3VocGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0MzA2NjQsImV4cCI6MjA2NzAwNjY2NH0.HHoTXMtKt-_rzWe420hH21V6MspUD-a2czDqvMFBvy4"
 def angka_input_with_format(label, key="formatted_input"):
     st.markdown(f"<label>{label}</label>", unsafe_allow_html=True)
     html_code = f"""
@@ -38,6 +41,7 @@ def angka_input_with_format(label, key="formatted_input"):
         }});\n    </script>\n    """
     value = components.html(html_code, height=60)
     return value
+
 
 # DB_NAME = "users.db"
 
@@ -81,16 +85,23 @@ def angka_input_with_format(label, key="formatted_input"):
 #     conn.close()
 
 def register_user(username, password, role):
-    sup = supabase
     try:
-        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode()
-        data = {"username": username, "password_hash": hashed, "role": role}
-        result = sup.table("users").insert(data).execute()
-        st.write("🔍 INSERT STATUS:", result.status_code)
-        st.write("📦 INSERT RESPONSE:", result.data)
+        password_bytes = password.encode('utf-8')
+        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')
+
+        data = {
+            "username": username,
+            "password_hash": hashed_pw,
+            "role": role
+        }
+
+        result = supabase.table("users").insert(data).execute()
+        st.write("🚦 Status:", result.status_code)
+        st.write("📦 Data:", result.data)
+
         return result.status_code == 201
     except Exception as e:
-        st.write("❌ EXCEPTION:", e)
+        st.error(f"❌ Error saat registrasi: {e}")
         return False
 
 
