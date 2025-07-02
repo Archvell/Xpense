@@ -1059,7 +1059,7 @@ def logout_confirmation_page():
             st.rerun()
 
 def main():
-    initialize_db()
+    # initialize_db()
    
 
     # Custom CSS to make sidebar buttons the same size
