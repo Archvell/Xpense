@@ -87,9 +87,11 @@ def angka_input_with_format(label, key="formatted_input"):
 
 def register_user(username, password, role):
     try:
-        password_bytes = password.encode('utf-8')
-        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')
+        # Hash password
+        password_bytes = password.encode('utf-8')  # harus bytes
+        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')  # hasil: string
 
+        # Insert ke Supabase
         data = {
             "username": username,
             "password_hash": hashed_pw,
@@ -97,13 +99,16 @@ def register_user(username, password, role):
         }
 
         result = supabase.table("users").insert(data).execute()
-        st.write("🚦 Status:", result.status_code)
-        st.write("📦 Data:", result.data)
 
-        return result.status_code == 201
+        if result.status_code == 201:
+            return True
+        else:
+            st.error(f"❌ Supabase error: {result.data}")
+            return False
     except Exception as e:
         st.error(f"❌ Error saat registrasi: {e}")
         return False
+
 
 
 def login_user(username, password):
@@ -1050,11 +1055,12 @@ def login_register_page():
             elif new_password != confirm_password:
                 st.error("Password tidak cocok.")
             else:
-                role = "user"
-                if register_user(new_username, new_password, role):
+                role = "user"  
+                success = register_user(new_username, new_password, role)
+                 if success:
                     st.success("🎉 Registrasi berhasil! Silakan login.")
                 else:
-                    st.error("Username sudah digunakan.")
+                    st.error("Registrasi gagal. Silakan coba lagi.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
