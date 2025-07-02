@@ -1,6 +1,5 @@
 import streamlit as st
 import sqlite3
-import bcrypt
 import pandas as pd
 import plotly.express as px
 from PIL import Image
@@ -11,7 +10,7 @@ from prophet import Prophet
 import streamlit.components.v1 as components
 import hashlib
 from st_supabase_connection import SupabaseConnection
-from supabase import create_client
+
 
 st.set_page_config(
     page_title="Xpense",
@@ -25,10 +24,7 @@ conn = st.connection("supabase",type=SupabaseConnection)
 # # Perform query.
 # rows = conn.query("*", table="mytable", ttl="10m").execute()
 
-# [connections.supabase]
-url = "https://nbuqypcaowxnpbguhper.supabase.co"
-key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5idXF5cGNhb3d4bnBiZ3VocGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0MzA2NjQsImV4cCI6MjA2NzAwNjY2NH0.HHoTXMtKt-_rzWe420hH21V6MspUD-a2czDqvMFBvy4"
-supabase = create_client(url, key)
+
 
 def angka_input_with_format(label, key="formatted_input"):
     st.markdown(f"<label>{label}</label>", unsafe_allow_html=True)
@@ -88,45 +84,29 @@ def angka_input_with_format(label, key="formatted_input"):
 #     conn.close()
 
 def register_user(username, password, role):
+    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+    conn = get_connection()
+    cursor = conn.cursor()
     try:
-        password_bytes = password.encode('utf-8')
-        hashed_pw = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')
-
-        # Kirim ke Supabase
-        result = supabase.table("users").insert({
-            "username": username,
-            "password_hash": hashed_pw,
-            "role": role
-        }).execute()
-
-        # 🔍 DEBUG: tampilkan hasil Supabase response langsung di halaman
-        st.write("📦 Response Supabase:", result)
-
-        if result.status_code == 201 or (result.data and len(result.data) > 0):
-            return True
-        else:
-            st.error(f"❌ Insert gagal: {result.status_code} - {result.data}")
-            return False
-
-    except Exception as e:
-        st.error(f"❌ Error saat registrasi: {e}")
+        cursor.execute("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", (username, password_hash, role))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
         return False
-
-
+    finally:
+        conn.close()
 
 
 def login_user(username, password):
-    try:
-        result = supabase.table("users").select("password_hash, role").eq("username", username).execute()
-        if result.data:
-            user_data = result.data[0]
-            stored_hash = user_data["password_hash"]
-            if bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
-                return True, user_data["role"]
-        return False, None
-    except Exception as e:
-        print("❌ Login error:", e)
-        return False, None
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash, role FROM users WHERE username = ?", (username,))
+    row = cursor.fetchone()
+    conn.close()
+    if row and bcrypt.checkpw(password.encode(), row[0]):
+        return True, row[1]
+    return False, None
+
 
 
 def get_user_settings(username):
@@ -1027,7 +1007,7 @@ def login_register_page():
     st.markdown('<div class="card-login">', unsafe_allow_html=True)
     st.markdown('<div class="app-title">Xpense</div>', unsafe_allow_html=True)
 
-    tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"])
+    tab1, tab2 = st.tabs(["🔐 Masuk", "📝 Daftar Akun"])
 
     with tab1:
         st.write("### Selamat Datang Kembali 👋")
@@ -1059,12 +1039,11 @@ def login_register_page():
             elif new_password != confirm_password:
                 st.error("Password tidak cocok.")
             else:
-                role = "user"  
-                success = register_user(new_username, new_password, role)
-                if success:
+                role = "user"
+                if register_user(new_username, new_password, role):
                     st.success("🎉 Registrasi berhasil! Silakan login.")
                 else:
-                    st.error("Registrasi gagal. Silakan coba lagi.")
+                    st.error("Username sudah digunakan.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
