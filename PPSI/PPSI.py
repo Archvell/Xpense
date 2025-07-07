@@ -18,13 +18,6 @@ st.set_page_config(
     page_icon="Xpense V5.png"
 )
 
-def get_supabase():
-    conn = st.connection("supabase", type=SupabaseConnection)
-    return conn.client
-
-# # Perform query.
-# rows = conn.query("*", table="mytable", ttl="10m").execute()
-
 
 
 def angka_input_with_format(label, key="formatted_input"):
