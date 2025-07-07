@@ -9,8 +9,6 @@ from datetime import datetime
 from prophet import Prophet
 import streamlit.components.v1 as components
 import hashlib
-from st_supabase_connection import SupabaseConnection
-from supabase import create_client
 
 st.set_page_config(
     page_title="Xpense",
